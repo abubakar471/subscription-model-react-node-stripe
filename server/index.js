@@ -1,5 +1,5 @@
 const express = require("express");
-const User = require("./models/User");
+const Subscription = require("./models/Subscription");
 const app = express();
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -62,17 +62,17 @@ app.post("/check-subscription", async (req, res) => {
   console.log("checking subscription.....");
   const { userId } = req.body;
 
-  const user = await User.findOne({
+  const subscription = await Subscription.findOne({
     userId: userId,
   });
 
-  if (!user) {
+  if (!subscription) {
     return res.json({ userSubscription: null });
   }
 
-  console.log("user found => ", user);
+  console.log("user found => ", subscription);
   return res.status(200).json({
-    userSubscription: user,
+    userSubscription: subscription,
   });
 });
 
@@ -81,8 +81,8 @@ app.post("/manage-billings", async (req, res) => {
   console.log("managing billings....");
   const { userId } = req.body;
 
-  const userSubscription = await User.findOne({
-    userId: userId
+  const userSubscription = await Subscription.findOne({
+    userId: userId,
   });
 
   if (userSubscription && userSubscription.stripeCustomerId) {
@@ -136,7 +136,7 @@ app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
       .then((subscription) => {
         // createOrder(customer, data);
         console.log("subscription created => ", subscription);
-        const newUser = new User({
+        const newUser = new Subscription({
           email: data?.metadata?.email,
           userId: data?.metadata?.userId,
           stripeSubscriptionId: subscription.id,
@@ -151,6 +151,24 @@ app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
       })
       .catch((err) => {
         console.log(err);
+      });
+  }
+
+  // if plan renewed or canceled
+  if (eventType === "invoice.payment_succeeded") {
+    const subscription = stripe.subscriptions
+      .retrieve(data.subscription)
+      .then((subscription) => {
+        const userSubscription = Subscription.findOneAndUpdate(
+          { stripeCustomerId: subscription.id },
+          {
+            stripePriceId: subscription.items.data[0].price.id,
+            stripeCurrentPeriodEnd: new Date(
+              subscription.current_period_end * 1000
+            ),
+          },
+          { new: true }
+        );
       });
   }
 
