@@ -1,6 +1,6 @@
 const CheckoutSuccess = () => {
     return(
-        <div>success</div>
+        <h1 style={{color : "green"}}>success</h1>
     )
 }
 

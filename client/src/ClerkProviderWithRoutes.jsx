@@ -4,6 +4,8 @@ import LoginPage from "./pages/LoginPage";
 import Home from "./pages/Home";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedPage from "./pages/ProtectedPage";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import CheckoutFailed from "./pages/CheckoutFailed";
 
 const ClerkProviderWithRoutes = () => {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ const ClerkProviderWithRoutes = () => {
         <Route path="/login/*" name="Login" element={<LoginPage />} />
         <Route path="/register/*" name="Register" element={<RegisterPage />} />
         <Route path="/" name="Home" element={<Home />} />
+        <Route path="/checkout-failed" name="Failed" element={<CheckoutFailed />} />
         <Route
           path="/protected"
           element={
