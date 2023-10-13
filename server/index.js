@@ -45,6 +45,10 @@ app.post("/create-checkout-session", async (req, res) => {
       },
     ],
     mode: "subscription",
+    subscription_data : {
+      trial_period_days : 7
+    },
+    // payment_method_collection : 'if_required',
     // the metadata is gonna be used to identify which user of ours purchased pro plan
     metadata: {
       userId,
@@ -98,6 +102,9 @@ app.post("/manage-billings", async (req, res) => {
 // This is your Stripe CLI webhook secret for testing your endpoint locally.
 let endpointSecret;
 
+const deleteSubscription = async(id) => {
+  await Subscription.findOneAndDelete({ stripeSubscriptionId: id });
+}
 app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
   let data;
   // console.log(req.body);
@@ -122,6 +129,7 @@ app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
     }
 
     data = event.data.object;
+    // console.log("data in webhook -> ", data);
     eventType = event.type;
   } else {
     data = req.body.data.object;
@@ -170,6 +178,13 @@ app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
           { new: true }
         );
       });
+  }
+
+  // delete subscription from database on subscripiion deleted
+  if(eventType === "customer.subscription.deleted"){
+    console.log("subscription deleted => ", data);
+    
+    deleteSubscription(data.id);
   }
 
   // Return a 200 response to acknowledge receipt of the event
